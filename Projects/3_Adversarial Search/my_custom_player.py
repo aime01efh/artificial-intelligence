@@ -1,5 +1,6 @@
 import random
 import time
+import os
 from sample_players import DataPlayer
 
 
@@ -71,9 +72,12 @@ class CustomPlayer(DataPlayer):
             # Iterative deepening - keep looping until we get terminated
             depth = 3
             while True:
-                self.queue.put(self.minimax_alpha_beta(state, depth=depth))
-                # self.queue.put(self.minimax(state, depth=depth))
-                # print('completed depth', depth)
+                if os.environ.get('P3_PLAYER', '') == 'minimax':
+                    self.queue.put(self.minimax(state, depth=depth))
+                else:
+                    self.queue.put(self.minimax_alpha_beta(state, depth=depth))
+                if os.environ.get('P3_DEBUG', ''):
+                    print('completed depth', depth)
                 depth += 1
 
     def minimax(self, state, depth):
