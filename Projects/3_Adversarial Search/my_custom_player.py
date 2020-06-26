@@ -4,7 +4,6 @@ import math
 from sample_players import DataPlayer
 from isolation import DebugState
 
-# TODO keep track of stats like # of nodes expanded, report in __del__
 
 class CustomPlayer(DataPlayer):
     """ Implement your own agent to play knight's Isolation
