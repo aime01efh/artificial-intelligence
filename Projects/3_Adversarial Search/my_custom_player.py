@@ -65,15 +65,15 @@ class CustomPlayer(DataPlayer):
         **********************************************************************
 
         Environment variables:
-            - P3_PLAYER: empty: minimax w/iter deep and alpha-beta pruning
-                         "minimax_no_ab": minimax w/iter deep but no alpha-beta
-                         "mcts": Monte Carlo Tree Search
+            - P3_PLAYER: "minimax": minimax w/iter deep but no alpha-beta pruning
+                         "minimax_ab": minimax w/iter deep and alpha-beta pruning
+                         empty: Monte Carlo Tree Search
             - P3_DEBUG: non-empty to enable debugging output
         """
-        if os.environ.get('P3_PLAYER', '') == 'mcts':
-            self.monte_carlo_tree_search(state)
-        else:
+        if os.environ.get('P3_PLAYER', '') in ['minimax', 'minimax_ab']:
             self.iterative_deepening(state)
+        else:
+            self.monte_carlo_tree_search(state)
 
     def iterative_deepening(self, state):
         # randomly select a move as player 1 or 2 on an empty board, otherwise
@@ -84,10 +84,13 @@ class CustomPlayer(DataPlayer):
             # Iterative deepening - keep looping until we get terminated
             depth = 3
             while True:
-                if os.environ.get('P3_PLAYER', '') == 'minimax_no_ab':
+                p3_player = os.environ.get('P3_PLAYER', '')
+                if p3_player == 'minimax':
                     self.queue.put(self.minimax(state, depth=depth))
-                else:
+                elif p3_player == 'minimax_ab':
                     self.queue.put(self.minimax_alpha_beta(state, depth=depth))
+                else:
+                    raise ValueError(f'Unknown P3_PLAYER {p3_player}')
                 if os.environ.get('P3_DEBUG', ''):
                     print('completed depth', depth)
                 depth += 1
@@ -110,6 +113,8 @@ class CustomPlayer(DataPlayer):
                 value = max(value, min_value(state.result(action), depth - 1))
             return value
         
+        if os.environ.get('P3_DEBUG', ''):
+            print(f'Starting minimax for player {state.player()}')
         return max(state.actions(), key=lambda x: min_value(state.result(x), depth - 1))
 
     def minimax_alpha_beta(self, state, depth):
@@ -136,6 +141,8 @@ class CustomPlayer(DataPlayer):
                 alpha = max(alpha, value)
             return value
         
+        if os.environ.get('P3_DEBUG', ''):
+            print(f'Starting minimax_alpha_beta for player {state.player()}')
         return max(state.actions(), key=lambda x: min_value(state.result(x), depth - 1,
                                                             float('-inf'), float('inf')))
 
