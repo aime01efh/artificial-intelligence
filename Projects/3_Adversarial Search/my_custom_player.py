@@ -64,12 +64,12 @@ class CustomPlayer(DataPlayer):
         **********************************************************************
 
         Environment variables:
-            - P3_PLAYER: "minimax": minimax w/iter deep but no alpha-beta pruning
-                         "minimax_ab": minimax w/iter deep and alpha-beta pruning
+            - P3_PLAYER: "minimax": minimax search w/iter deep
+                         "alpha-beta": alpha-btea search w/iter deep
                          empty: Monte Carlo Tree Search
             - P3_DEBUG: non-empty to enable debugging output
         """
-        if os.environ.get('P3_PLAYER', '') in ['minimax', 'minimax_ab']:
+        if os.environ.get('P3_PLAYER', '') in ['minimax', 'alpha-beta']:
             self.iterative_deepening(state)
         else:
             self.monte_carlo_tree_search(state)
@@ -86,8 +86,8 @@ class CustomPlayer(DataPlayer):
                 p3_player = os.environ.get('P3_PLAYER', '')
                 if p3_player == 'minimax':
                     self.queue.put(self.minimax(state, depth=depth))
-                elif p3_player == 'minimax_ab':
-                    self.queue.put(self.minimax_alpha_beta(state, depth=depth))
+                elif p3_player == 'alpha-beta':
+                    self.queue.put(self.alpha_beta(state, depth=depth))
                 else:
                     raise ValueError(f'Unknown P3_PLAYER {p3_player}')
                 if os.environ.get('P3_DEBUG', ''):
@@ -112,11 +112,11 @@ class CustomPlayer(DataPlayer):
                 value = max(value, min_value(state.result(action), depth - 1))
             return value
         
-        if os.environ.get('P3_DEBUG', ''):
-            print(f'Starting minimax for player {state.player()}')
+        # if os.environ.get('P3_DEBUG', ''):
+        #     print(f'Starting minimax for player {state.player()}')
         return max(state.actions(), key=lambda x: min_value(state.result(x), depth - 1))
 
-    def minimax_alpha_beta(self, state, depth):
+    def alpha_beta(self, state, depth):
 
         def min_value(state, depth, alpha, beta):
             if state.terminal_test(): return state.utility(self.player_id)
@@ -141,7 +141,7 @@ class CustomPlayer(DataPlayer):
             return value
         
         if os.environ.get('P3_DEBUG', ''):
-            print(f'Starting minimax_alpha_beta for player {state.player()}')
+            print(f'Starting alpha-beta for player {state.player()}')
         return max(state.actions(), key=lambda x: min_value(state.result(x), depth - 1,
                                                             float('-inf'), float('inf')))
 
@@ -149,8 +149,8 @@ class CustomPlayer(DataPlayer):
         """Run a Monte Carlo Tree Search with root at the given state, providing
         the current best action every "update_every" iterations
         """
-        if os.environ.get('P3_DEBUG', ''):
-            print(f'Starting MCTS for player {state.player()}')
+        # if os.environ.get('P3_DEBUG', ''):
+        #     print(f'Starting MCTS for player {state.player()}')
         tree = CustomPlayer.MCTSNode(state, state.player(), parent=None, relative_ply=0)
         if len(tree.actions) == 1:
             if os.environ.get('P3_DEBUG', ''):
@@ -170,8 +170,8 @@ class CustomPlayer(DataPlayer):
                 best_action = tree.best_action()
                 self.queue.put(best_action)
                 if os.environ.get('P3_DEBUG', ''):
-                    print(f'  MCTS provided action {best_action} after {tree.num_playouts} playouts: '
-                          f'{[x.num_wins for x in tree.action_nodes[:20]]}')
+                    # print(f'  MCTS provided action {best_action} after {tree.num_playouts} playouts: '
+                    #       f'{[x.num_wins for x in tree.action_nodes[:20]]}')
                     # print(tree.actions)
                     try:
                         state.result(best_action)
@@ -192,7 +192,7 @@ class CustomPlayer(DataPlayer):
             self.action_node_ucb1s = []
 
             self.num_wins = self.num_playouts = 0
-            self.ucb1_c = math.sqrt(2.0)
+            self.ucb1_c = 0.85  # math.sqrt(2.0)
 
         def __str__(self):
             return (f'  MCTSNode(player={self.player_id}, relply={self.relative_ply}, '
